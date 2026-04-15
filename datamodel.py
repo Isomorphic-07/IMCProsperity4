@@ -33,7 +33,12 @@ class ConversionObservation:
 
 class Observation:
 
-    def __init__(self, plainValueObservations: Dict[Product, ObservationValue], conversionObservations: Dict[Product, ConversionObservation]) -> None:
+    def __init__(
+            self,
+            plainValueObservations: Dict[Product, ObservationValue],
+            conversionObservations: Dict[Product, ConversionObservation]
+        ) -> None:
+
         self.plainValueObservations = plainValueObservations
         self.conversionObservations = conversionObservations
 
@@ -64,7 +69,16 @@ class OrderDepth:
 
 class Trade:
 
-    def __init__(self, symbol: Symbol, price: int, quantity: int, buyer: UserId=None, seller: UserId=None, timestamp: int=0) -> None:
+    def __init__(
+            self,
+            symbol: Symbol,
+            price: int,
+            quantity: int,
+            buyer: UserId=None,
+            seller: UserId=None,
+            timestamp: int=0
+        ) -> None:
+
         self.symbol = symbol
         self.price: int = price
         self.quantity: int = quantity
