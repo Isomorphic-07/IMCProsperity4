@@ -1,4 +1,4 @@
-from datamodel import (
+from src.datamodel import (
     Listing,
     ConversionObservation,
     Observation, Order,
@@ -6,6 +6,18 @@ from datamodel import (
     TradingState,
     ProsperityEncoder
 )
+
+import json
+from typing import Dict, List
+from json import JSONEncoder
+import jsonpickle
+
+Time = int
+Symbol = str
+Product = str
+Position = int
+UserId = str
+ObservationValue = int
 
 ashCoatedOsmiumLimit = 80  # ASH_COATED_OSMIUM
 intarianPepperRootLimit = 80  # INTARIAN_PEPPER_ROOT
@@ -22,7 +34,58 @@ class Trader:
     # This is the main function called every round, where the logic for
     # our algorithm will be impemented.
     def run(self, state: TradingState):
-        pass
+
+        # Handle logic for ASH_COATED_OSMIUM
+        # ----------------------------------
+        '''look at z = (x - 10000)/5.35, if z > 2, we are gonna sell, once
+        z < 0.5 we exit this position and buy the instrument at that price
+        For the other direction, if z < -2, we are gonna buy, then track the price
+        if the price goes z >= -0.5, we exit this position and sell.
+        '''
+        # Orders to be placed on exchange matching engine
+        result = {"ASH_COATED_OSMIUM": [], "INTARIAN_PEPPER_ROOT": []}
+
+        ashOrders = state.order_depths["ASH_COATED_OSMIUM"]
+        ashOrders = self.sort_buys(ashOrders)
+        ashOrders = self.sort_sells(ashOrders)
+
+        acceptablePrice = self.calculate_fair_price(ashOrders)
+
+        orders: List[Order] = []
+        print("Acceptable price : " + str(acceptablePrice))
+        print("Buy Order depth : " + str(len(ashOrders.buy_orders)) + ", Sell order depth : " + str(len(ashOrders.sell_orders)))
+
+        if len(ashOrders.sell_orders) != 0:
+
+            # We are going to buy
+            if (acceptablePrice < 9989):
+                bestAsk = ashOrders.buy_orders.keys()[0]
+                bestAskAmount = ashOrders.buy_orders[bestAsk]
+                print("BUY", str(-bestAskAmount) + "x", bestAsk)
+
+                # Confirm this order logic
+                orders.append(Order("ASH_COATED_OSMIUM", bestAsk, -bestAskAmount))
+
+        if len(ashOrders.buy_orders) != 0:
+
+            # We are going to sell
+            if (acceptablePrice > 10011):
+                bestBid = ashOrders.buy_orders.keys()[0]
+                bestBidAmount = ashOrders.buy_orders[bestBid]
+                print("SELL", str(bestBidAmount) + "x", bestBid)
+
+                # Confirm this order logic
+                orders.append(Order("ASH_COATED_OSMIUM", bestBid, -bestBidAmount))
+
+        result["ASH_COATED_OSMIUM"] = orders
+
+        traderData = ""  # No state needed - we check position directly
+        conversions = 0
+
+        # Handle logic for INTARIAN_PEPPER_ROOT
+        # -------------------------------------
+
+        return result, conversions, traderData
 
     # Ignore this class for now, only required for Round 2 and beyond.
     def bid(self):
@@ -58,4 +121,5 @@ class Trader:
         But if there are more orders on one side, we might want to weight
         the price more towards that side.
         '''
-        pass
+        midPrice = (order_depth.sell_orders.keys()[0] + order_depth.buy_orders.keys()[0]) / 2
+        return midPrice
