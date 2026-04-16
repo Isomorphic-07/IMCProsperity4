@@ -1,4 +1,4 @@
-from library.datamodel import OrderDepth
+from src.library.datamodel import OrderDepth
 
 
 def vwap(order_depth: OrderDepth) -> float | None:
