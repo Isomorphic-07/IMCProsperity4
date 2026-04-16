@@ -1,7 +1,9 @@
-from src.traderTemplate import Trader
+from datamodel import TradingState, OrderDepth, Order
 from src.library.pricers import vwap, mid_price
-from src.library.datamodel import TradingState, OrderDepth, Order
-from src.library.constants import ASH_COATED_OSMIUM, ASH_COATED_OSMIUM_LIMIT
+
+
+ASH_COATED_OSMIUM = "ASH_COATED_OSMIUM"
+ASH_COATED_OSMIUM_LIMIT = 80
 
 MEAN_PRICE = 10000
 STD_DEV = 30
@@ -59,7 +61,7 @@ def calculate_adjustment(price: float, position: int, max_position: int) -> int:
 
     return 0
 
-class StellageTrader(Trader):
+class Trader:
     def run(self, state: TradingState) -> tuple[dict, int, str]:
         result = {}
 
@@ -90,4 +92,3 @@ class StellageTrader(Trader):
         conversions = -1
         traderData = ""
         return result, -1, ""
-
