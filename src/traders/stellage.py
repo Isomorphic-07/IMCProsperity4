@@ -3,8 +3,10 @@ from src.library.pricers import vwap, mid_price
 from src.library.datamodel import TradingState, OrderDepth, Order
 from src.library.constants import ASH_COATED_OSMIUM, ASH_COATED_OSMIUM_LIMIT
 
+import math
+
 MEAN_PRICE = 10000
-STD_DEV = 30
+STD_DEV = 10
 
 def normalise_diff(price: float, average_price: float, deviation: float) -> float:
     """
@@ -21,7 +23,7 @@ def bound_function1(diff: float) -> float:
     args:
         diff: A normalised difference between the average price and current price
     """
-    result = diff ** 3
+    result = - (diff ** 3)
     if result > 1:
         return 1
     if result < -1:
@@ -36,7 +38,7 @@ def bound_function2(diff: float) -> float:
     args:
         price: A normalised difference between the average price and current price
     """
-    result = diff ** 3
+    result = - (math.cbrt(diff))
     if result > 1:
         return 1
     if result < -1:
@@ -78,14 +80,12 @@ class StellageTrader(Trader):
         
         if positionAdjustment > 0:
             best_ask = min(orderBook.sell_orders.keys())
-            best_ask_volume = orderBook.sell_orders[best_ask]
-            volume = min(positionAdjustment, best_ask_volume)
-            result[ASH_COATED_OSMIUM] = Order(ASH_COATED_OSMIUM, best_ask, volume)
+            result[ASH_COATED_OSMIUM] = Order(ASH_COATED_OSMIUM, best_ask, positionAdjustment)
+            print("Buying", positionAdjustment, "at price", best_ask)
         else:
             best_bid = max(orderBook.buy_orders.keys())
-            best_bid_volume = orderBook.buy_orders[best_bid]
-            volume = min(-positionAdjustment, best_bid_volume)
-            result[ASH_COATED_OSMIUM] = Order(ASH_COATED_OSMIUM, best_bid, -volume)
+            result[ASH_COATED_OSMIUM] = Order(ASH_COATED_OSMIUM, best_bid, positionAdjustment)
+            print("Selling", abs(positionAdjustment), "at price", best_bid)
         
         conversions = -1
         traderData = ""

@@ -6,3 +6,4 @@ __MACOSX/
 *.pyo
 *.pyd
 
+.pytest_cache/
