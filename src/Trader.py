@@ -1,4 +1,4 @@
-from src.datamodel import (
+from datamodel import (
     Listing,
     ConversionObservation,
     Observation, Order,
@@ -59,8 +59,8 @@ class Trader:
 
             # We are going to buy
             if (acceptablePrice < 9989):
-                bestAsk = ashOrders.buy_orders.keys()[0]
-                bestAskAmount = ashOrders.buy_orders[bestAsk]
+                bestAsk = list(ashOrders.sell_orders.keys())[0]
+                bestAskAmount = ashOrders.sell_orders[bestAsk]
                 print("BUY", str(-bestAskAmount) + "x", bestAsk)
 
                 # Confirm this order logic
@@ -70,7 +70,7 @@ class Trader:
 
             # We are going to sell
             if (acceptablePrice > 10011):
-                bestBid = ashOrders.buy_orders.keys()[0]
+                bestBid = list(ashOrders.buy_orders.keys())[0]
                 bestBidAmount = ashOrders.buy_orders[bestBid]
                 print("SELL", str(bestBidAmount) + "x", bestBid)
 
