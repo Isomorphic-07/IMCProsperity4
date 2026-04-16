@@ -46,10 +46,14 @@ class Trader:
         result = {"ASH_COATED_OSMIUM": [], "INTARIAN_PEPPER_ROOT": []}
 
         ashOrders = state.order_depths["ASH_COATED_OSMIUM"]
-        ashOrders = self.sort_buys(ashOrders)
-        ashOrders = self.sort_sells(ashOrders)
+
+        ashOrders.buy_orders = self.sort_buys(ashOrders.buy_orders)
+        ashOrders.sell_orders = self.sort_sells(ashOrders.sell_orders)
 
         acceptablePrice = self.calculate_fair_price(ashOrders)
+
+        if acceptablePrice is None:
+            pass
 
         orders: List[Order] = []
         print("Acceptable price : " + str(acceptablePrice))
@@ -95,6 +99,21 @@ class Trader:
     def is_own_trade(self, trade: Trade) -> bool:
         return (trade.get_buyer() == "SUBMISSION") or (trade.get_seller() == "SUBMISSION")
 
+    def sort_buys(self, buys: Dict[int, int]) -> Dict[int, int]:
+        '''
+        Obviously, the best buy orders are the ones with the highest price,
+        so we want to sort them in decreasing order of price.
+        '''
+        return dict(sorted(buys.items(), key=lambda item: item[0], reverse=True)
+        )
+
+    def sort_sells(self, sells: Dict[int, int]) -> Dict[int, int]:
+        '''
+        The best sell orders are the ones with the lowest price,
+        so we want to sort them in increasing order of price.
+        '''
+        return dict(sorted(sells.items(), key=lambda item: item[0]))
+
     def get_max_position(self, symbol: str, direction: int) -> int:
 
         # Confirm direction is valid
@@ -121,5 +140,8 @@ class Trader:
         But if there are more orders on one side, we might want to weight
         the price more towards that side.
         '''
-        midPrice = (order_depth.sell_orders.keys()[0] + order_depth.buy_orders.keys()[0]) / 2
-        return midPrice
+        if (len(order_depth.buy_orders) > 0 and len(order_depth.sell_orders) > 0):
+            midPrice = (list(order_depth.sell_orders.keys())[0] + list(order_depth.buy_orders.keys())[0]) / 2
+            return midPrice
+
+        return None
