@@ -103,7 +103,7 @@ class Trader:
             return None
         price = int(price)
 
-        fairPrice = (0.00099992 * state.timestamp) + 10000
+        fairPrice = (0.00099992 * (state.timestamp + 3000000)) + 10000
 
         z = (price - fairPrice) / 2.0008
 
