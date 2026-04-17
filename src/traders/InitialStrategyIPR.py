@@ -10,6 +10,9 @@ INTARIAN_PEPPER_ROOT_LIMIT = 80
 MEAN_PRICE = 10000
 STD_DEV = 10
 
+BUY = 1
+SELL = -1
+
 
 class Trader:
     def __init__(self):
@@ -18,21 +21,134 @@ class Trader:
         # 1 -> Shorting
         # -1 -> Buying
         self.pepperState = 0
+        self.ashState = 0
 
     def run(self, state: TradingState) -> tuple[dict, int, str]:
         result = {}
 
-        outgoingAshOrders = self.runAsh(state, ASH_COATED_OSMIUM, ASH_COATED_OSMIUM_LIMIT)
+        outgoingAshOrders = self.runAshMarketMaker(
+            state,
+            ASH_COATED_OSMIUM,
+            ASH_COATED_OSMIUM_LIMIT
+        )
         if (outgoingAshOrders is not None):
             result[ASH_COATED_OSMIUM] = outgoingAshOrders
 
-        outgoingPepperOrders = self.runPepper(state, INTARIAN_PEPPER_ROOT, INTARIAN_PEPPER_ROOT_LIMIT)
+        outgoingPepperOrders = self.runPepper(
+            state,
+            INTARIAN_PEPPER_ROOT,
+            INTARIAN_PEPPER_ROOT_LIMIT
+        )
         if (outgoingPepperOrders is not None):
             result[INTARIAN_PEPPER_ROOT] = outgoingPepperOrders
 
         conversions = -1
         traderData = ""
         return result, conversions, traderData
+
+    def runAshMarketMaker(self, state: TradingState, symbol: str, limit: int):
+
+        orderBook = state.order_depths.get(symbol, None)
+        if orderBook is None:
+            return None
+        position = state.position.get(symbol, 0)
+        spread = bid_ask_spread(orderBook)
+        if spread is None:
+            return None
+        bestBid, bestAsk = spread
+        bidPrice, askPrice = bestBid + 1, bestAsk - 1
+        volume = 30
+
+        print(f"Position: {position}")
+        if bestAsk - bestBid > 8:
+            buy_order = Order(symbol, bidPrice, volume * BUY)
+            sell_order = Order(symbol, askPrice, volume * SELL)
+            print(f"<<{bidPrice} at {askPrice} {volume} UP>>")
+            return [buy_order, sell_order]
+
+        return None
+
+    def runAsh2(
+            self,
+            state: TradingState,
+            symbol: str,
+            limit: int
+    ):
+        orderBook = state.order_depths[symbol]
+        position = state.position.get(symbol, 0)
+
+        price = vwap(orderBook)
+
+        if price is None:
+            return None
+        price = int(price)
+
+        fairPrice = 10000
+
+        z = (price - fairPrice) / 5.35
+
+        if (self.ashState == 0):
+            if (z > 2.0):
+                self.ashState = 1
+            elif (z < -2.0):
+                self.ashState = -1
+
+        if (self.ashState == 1):
+
+            # Sell
+            if (z > 2.0):
+                bestBid = max(orderBook.buy_orders.keys())
+                bestBidVolume = orderBook.buy_orders[bestBid]
+                volume = min(abs(limit + position), abs(bestBidVolume))
+
+                if (volume > 0):
+                    return [Order(symbol, bestBid, -volume)]
+                return None
+            if (z > 0.5):
+                return None
+
+            # Exit the position, and buy at that price
+            if (position < 0):
+                bestAsk = min(orderBook.sell_orders.keys())
+                bestAskVolume = orderBook.sell_orders[bestAsk]
+                volume = min(abs(position), abs(bestAskVolume))
+
+                if (volume > 0):
+                    return [Order(symbol, bestAsk, volume)]
+                return None
+
+            # Reset state to neutral after all inventory cleared
+            self.ashState = 0
+
+        if (self.ashState == -1):
+
+            # Buy
+            if (z < -2.0):
+                bestAsk = min(orderBook.sell_orders.keys())
+                bestAskVolume = orderBook.sell_orders[bestAsk]
+                volume = min(abs(position - limit), abs(bestAskVolume))
+
+                if (volume > 0):
+                    return [Order(symbol, bestAsk, volume)]
+                return None
+
+            if (z < -0.5):
+                return None
+
+            # Exit the position, and sell
+            if (position > 0):
+                bestBid = max(orderBook.buy_orders.keys())
+                bestBidVolume = orderBook.buy_orders[bestBid]
+                volume = min(abs(position), abs(bestBidVolume))
+
+                if (volume > 0):
+                    return [Order(symbol, bestBid, -volume)]
+                return None
+
+            # Reset state to neutral after all inventory cleared
+            self.ashState = 0
+
+        return None
 
     def runAsh(
             self,
@@ -270,3 +386,11 @@ def calculate_adjustment(price: float, position: int, max_position: int) -> int:
         return ideal_position - position
 
     return 0
+
+
+def bid_ask_spread(depth: OrderDepth) -> tuple[int, int] | None:
+    if not depth.buy_orders or not depth.sell_orders:
+        return None
+    best_bid = max(depth.buy_orders.keys())
+    best_ask = min(depth.sell_orders.keys())
+    return (best_bid, best_ask)
