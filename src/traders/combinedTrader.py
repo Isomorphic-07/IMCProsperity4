@@ -52,12 +52,13 @@ class Trader:
         if orderBook is None:
             return None
         position = state.position.get(symbol, 0)
+        limit = ASH_COATED_OSMIUM_LIMIT
         spread = bid_ask_spread(orderBook)
         if spread is None:
             return None
         bestBid, bestAsk = spread
         bidPrice, askPrice = bestBid + 1, bestAsk - 1
-        volume = 30
+        volume = abs(limit) - abs(position)
 
         print(f"Position: {position}")
         if bestAsk - bestBid > 8:

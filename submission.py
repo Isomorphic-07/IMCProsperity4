@@ -31,10 +31,10 @@ class Trader:
             return {}, -1, ""
         bestBid, bestAsk = spread
         bidPrice, askPrice = bestBid + 1, bestAsk - 1
-        volume = 30
+        volume = abs(limit) - abs(position)
 
         print(f"Position: {position}")
-        if bestAsk - bestBid > 8:
+        if bestAsk - bestBid > 5:
             buy_order = Order(ASH_COATED_OSMIUM, bidPrice, volume * BUY)
             sell_order = Order(ASH_COATED_OSMIUM, askPrice, volume * SELL)
             print(f"<<{bidPrice} at {askPrice} {volume} UP>>")
