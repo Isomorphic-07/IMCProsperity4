@@ -1,14 +1,6 @@
-from datamodel import TradingState, OrderDepth, Order
-
-ASH_COATED_OSMIUM = "ASH_COATED_OSMIUM"
-INTARIAN_PEPPER_ROOT = "INTARIAN_PEPPER_ROOT"
-
-BUY = 1
-SELL = -1
-
-ASH_COATED_OSMIUM_LIMIT = 80
-INTARIAN_PEPPER_ROOT_LIMIT = 80
-
+from src.library.datamodel import TradingState, OrderDepth, Order
+from src.traderTemplate import Trader
+from src.library.constants import ASH_COATED_OSMIUM, ASH_COATED_OSMIUM_LIMIT, BUY, SELL
 
 def bid_ask_spread(depth: OrderDepth) -> tuple[int, int] | None:
     if not depth.buy_orders or not depth.sell_orders:
@@ -17,7 +9,7 @@ def bid_ask_spread(depth: OrderDepth) -> tuple[int, int] | None:
     best_ask = min(depth.sell_orders.keys())
     return (best_bid, best_ask)
 
-class Trader:
+class MarketMaker(Trader):
     def run(self, state: TradingState) -> tuple[dict, int, str]:
         result = {}
 
